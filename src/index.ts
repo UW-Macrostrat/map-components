@@ -23,22 +23,22 @@ class Background extends Component {
     return h(GeoPath, {
       geometry: { type: 'Sphere' },
       className: 'background',
-      ...this.props
+      ...this.props,
     })
   }
 }
 
-const Graticule = function(props) {
+const Graticule = function (props) {
   const graticule = geoGraticule()
     .step([10, 10])
     .extent([
       [-180, -80],
-      [180, 80 + 1e-6]
+      [180, 80 + 1e-6],
     ])
   return h(GeoPath, {
     className: 'graticule',
     geometry: graticule(),
-    ...props
+    ...props,
   })
 }
 
@@ -46,7 +46,7 @@ function Sphere(props) {
   const newProps = addClassNames(props, 'neatline')
   return h(GeoPath, {
     geometry: { type: 'Sphere' },
-    ...newProps
+    ...newProps,
   })
 }
 
@@ -95,7 +95,7 @@ const mutateProjection: MutateProjection = (projection, opts) => {
     .rotate(rotation)
     .clipExtent([
       [margin, margin],
-      [width - margin, height - margin]
+      [width - margin, height - margin],
     ])
 }
 
@@ -106,10 +106,8 @@ class Globe extends StatefulComponent<GlobeProps, any> {
     allowZoom: false,
     center: [0, 0],
     graticule: Graticule,
-    projection: geoOrthographic()
-      .clipAngle(90)
-      .precision(0.5),
-    setupProjection: mutateProjection
+    projection: geoOrthographic().clipAngle(90).precision(0.5),
+    setupProjection: mutateProjection,
   }
 
   mapElement: React.RefObject<HTMLElement>
@@ -130,7 +128,8 @@ class Globe extends StatefulComponent<GlobeProps, any> {
     this.state = {
       projection: setupProjection(projection, rest),
       zoom: 1,
-      canvasContexts: new Set([])
+      canvasContexts: new Set([]),
+      rotation: null,
     }
   }
 
@@ -138,13 +137,15 @@ class Globe extends StatefulComponent<GlobeProps, any> {
     const { width, height, scale, translate, center, setupProjection } = this.props
     const sameDimensions = prevProps.width === width && prevProps.height === height
     const sameProjection = prevProps.projection === this.props.projection
-    const sameScale =
-      prevProps.scale === scale && prevProps.translate === translate && prevProps.center === center
-    if (sameDimensions && sameProjection && sameScale) {
+    const sameScale = prevProps.scale === scale && prevProps.translate === translate
+    const sameCenter = prevProps.center === center
+    if (sameDimensions && sameProjection && sameScale && sameCenter) {
       return
     }
 
-    const newProj = setupProjection(this.state.projection, this.props)
+    // State rotation is overridden by externally set rotation
+    const { rotation } = this.state
+    const newProj = setupProjection(this.state.projection, { rotation, ...this.props })
 
     return this.updateProjection(newProj)
   }
@@ -161,11 +162,7 @@ class Globe extends StatefulComponent<GlobeProps, any> {
   rotateProjection(rotation) {
     this.props.onRotate?.(rotation)
     if (this.props.rotation != null) return
-    const newProj = this.props.setupProjection(this.state.projection, {
-      ...this.props,
-      rotation
-    })
-    return this.updateProjection(newProj)
+    this.updateState({ rotation: { $set: rotation } })
   }
 
   dispatchEvent(evt) {
@@ -195,7 +192,7 @@ class Globe extends StatefulComponent<GlobeProps, any> {
       allowZoom,
       scale,
       center,
-      graticule
+      graticule,
     } = this.props
     const { projection } = this.state
     const initialScale = scale || projection.scale() || 500
@@ -223,7 +220,7 @@ class Globe extends StatefulComponent<GlobeProps, any> {
           xmlns,
           width,
           height,
-          viewBox
+          viewBox,
         },
         [
           h('g.map', { ref: this.mapElement }, [h(Background), h(graticule), children, h(Sphere)]),
@@ -231,8 +228,8 @@ class Globe extends StatefulComponent<GlobeProps, any> {
             keepNorthUp,
             initialScale,
             dragSensitivity: 0.1,
-            allowZoom
-          })
+            allowZoom,
+          }),
         ]
       )
     )
