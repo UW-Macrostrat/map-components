@@ -5,6 +5,8 @@ This library is similar in structure
 to [React Simple Maps](https://www.react-simple-maps.io/examples/usa-with-state-labels/)
 but with a enhanced canvas and granular projection support.
 
+**This repository has been archived. It is now part of [Macrostrat's web components monorepo](https://github.com/UW-Macrostrat/web-components).**
+
 ## Installation
 
 ```
